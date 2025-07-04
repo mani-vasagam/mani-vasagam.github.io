@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Daily Task Checklist</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+    body {
+      min-height: 100vh;
+      display: flex; justify-content: center; align-items: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%);
+    }
+
+    /* ─── Card Container ─── */
+    .todo-card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      width: 95%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ─── Left: Controls ─── */
+    .controls {
+      padding: 20px;
+    }
+    .date-container {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 15px;
+    }
+    #dayLabel {
+      font-size: 18px; font-weight: 600; color: #333;
+    }
+    #datePicker {
+      padding: 8px; font-size: 15px;
+      border: 1px solid #ddd; border-radius: 4px;
+    }
+    #datePicker:focus { outline: none; border-color: #4facfe; }
+
+    .input-group {
+      display: flex; gap: 10px; margin-bottom: 20px;
+    }
+    #newTaskInput {
+      flex: 1; padding: 10px; font-size: 16px;
+      border: 1px solid #ddd; border-radius: 4px;
+    }
+    #newTaskInput:focus { outline: none; border-color: #4facfe; }
+    #addBtn {
+      padding: 0 20px; background: #4facfe; border: none;
+      border-radius: 4px; color: #fff; font-size: 16px;
+      cursor: pointer; transition: background 0.2s;
+    }
+    #addBtn:hover { background: #3b92e0; }
+
+    .tabs {
+      display: flex; gap: 20px; margin-bottom: 15px;
+    }
+    .tab {
+      flex: 1; text-align: center; padding-bottom: 6px;
+      cursor: pointer; color: #555; font-weight: 500;
+      border-bottom: 2px solid transparent; transition: all 0.2s;
+    }
+    .tab.active {
+      color: #4facfe; border-color: #4facfe;
+    }
+
+    /* ─── Right: Task List ─── */
+    .task-list-container {
+      padding: 20px;
+      border-top: 1px solid #eee;
+    }
+    #taskList { list-style: none; }
+    .task-item {
+      background: #f9f9f9; border-radius: 4px;
+      padding: 10px; margin-bottom: 12px; transition: background 0.2s;
+    }
+    .task-item.completed { background: #e0f7ff; }
+    .task-main {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .task-main input[type="checkbox"] {
+      width: 18px; height: 18px; cursor: pointer;
+    }
+    .task-main span {
+      flex: 1; font-size: 15px; color: #333;
+    }
+    .task-main span.completed {
+      text-decoration: line-through; color: #888;
+    }
+    .task-desc {
+      width: 100%; margin-top: 8px; padding: 8px;
+      font-size: 14px; border: 1px solid #ddd;
+      border-radius: 4px; resize: vertical;
+    }
+    .task-desc:focus { outline: none; border-color: #4facfe; }
+
+    /* ─── Mobile First: no change ─── */
+
+    /* ─── Desktop ≥768px: Landscape split ─── */
+    @media (min-width: 768px) {
+      .todo-card { flex-direction: row; }
+      .controls {
+        flex: 1; border-right: 1px solid #eee;
+      }
+      .task-list-container {
+        flex: 2;
+        border-top: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="todo-card">
+    <!-- Controls Panel -->
+    <div class="controls">
+      <div class="date-container">
+        <div id="dayLabel">Loading…</div>
+        <input type="date" id="datePicker">
+      </div>
+      <div class="input-group">
+        <input type="text" id="newTaskInput" placeholder="New task...">
+        <button id="addBtn">ADD</button>
+      </div>
+      <div class="tabs">
+        <div class="tab active" data-filter="all">All</div>
+        <div class="tab" data-filter="active">Active</div>
+        <div class="tab" data-filter="completed">Completed</div>
+      </div>
+    </div>
+
+    <!-- Task List Panel -->
+    <div class="task-list-container">
+      <ul id="taskList"></ul>
+    </div>
+  </div>
+
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, getDocs,
+      updateDoc, doc
+    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+    // ← Your Firebase config →
+    const firebaseConfig = {
+      apiKey: "AIzaSyAw-eJHjDGhy5SHrgkHmsr89WyVSFh3kJ0",
+      authDomain: "daily-task-63c66.firebaseapp.com",
+      projectId: "daily-task-63c66",
+      storageBucket: "daily-task-63c66.firebasestorage.app",
+      messagingSenderId: "419241190746",
+      appId: "1:419241190746:web:0db22ac0e5a2498a993f63"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    // State & refs
+    let tasks = [], filter = "all";
+    const datePicker  = document.getElementById("datePicker");
+    const dayLabel    = document.getElementById("dayLabel");
+    const input       = document.getElementById("newTaskInput");
+    const addBtn      = document.getElementById("addBtn");
+    const tabs        = document.querySelectorAll(".tab");
+    const taskList    = document.getElementById("taskList");
+
+    // Init: today, label, fetch
+    window.addEventListener("DOMContentLoaded", () => {
+      const today = new Date().toISOString().split("T")[0];
+      datePicker.value = today;
+      updateDayLabel();
+      fetchTasks();
+    });
+
+    function updateDayLabel(){
+      const d = new Date(datePicker.value);
+      const opts = { weekday:'long', month:'short', day:'numeric' };
+      dayLabel.textContent = `${d.toLocaleDateString('en-US',opts)} Tasks`;
+    }
+
+    async function fetchTasks(){
+      const snap = await getDocs(collection(db,"tasks"));
+      tasks = snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderTasks();
+    }
+
+    function renderTasks(){
+      const sel = datePicker.value;
+      taskList.innerHTML = "";
+      tasks
+        .filter(t=>t.date===sel||t.date===undefined)
+        .filter(t=>{
+          if(filter==="active") return !t.done;
+          if(filter==="completed") return t.done;
+          return true;
+        })
+        .forEach(t=>{
+          const li = document.createElement("li");
+          li.className = "task-item"+(t.done?" completed":"");
+          const main = document.createElement("div");
+          main.className = "task-main";
+          const cb = document.createElement("input");
+          cb.type="checkbox"; cb.checked=t.done;
+          cb.onchange=()=>toggleDone(t.id,cb.checked);
+          const span = document.createElement("span");
+          span.textContent=t.text;
+          if(t.done) span.classList.add("completed");
+          main.append(cb,span); li.append(main);
+          const desc = document.createElement("textarea");
+          desc.className="task-desc";
+          desc.placeholder="Describe this task…";
+          desc.value=t.description||"";
+          desc.onchange=()=>updateDescription(t.id,desc.value);
+          li.append(desc);
+          taskList.append(li);
+        });
+    }
+
+    async function addTask(){
+      const text=input.value.trim(), date=datePicker.value;
+      if(!text||!date) return;
+      await addDoc(collection(db,"tasks"),{text,description:"",done:false,date,timestamp:new Date()});
+      input.value=""; fetchTasks();
+    }
+    async function toggleDone(id,done){
+      await updateDoc(doc(db,"tasks",id),{done}); fetchTasks();
+    }
+    async function updateDescription(id,description){
+      await updateDoc(doc(db,"tasks",id),{description});
+    }
+
+    addBtn.addEventListener("click",addTask);
+    input.addEventListener("keydown",e=>{if(e.key==="Enter")addTask()});
+    datePicker.addEventListener("change",()=>{
+      updateDayLabel(); fetchTasks();
+    });
+    tabs.forEach(tab=>tab.addEventListener("click",()=>{
+      tabs.forEach(t=>t.classList.remove("active"));
+      tab.classList.add("active");
+      filter=tab.dataset.filter;
+      renderTasks();
+    }));
+  </script>
+</body>
+</html>
