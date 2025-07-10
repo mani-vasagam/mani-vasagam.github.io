@@ -198,7 +198,7 @@
       const sel = datePicker.value;
       taskList.innerHTML = "";
       tasks
-        .filter(t=>t.date===sel||t.date===undefined)
+        .filter(t=>t.date===sel)
         .filter(t=>{
           if(filter==="active") return !t.done;
           if(filter==="completed") return t.done;
