@@ -146,7 +146,7 @@
   </div>
 
 
-  <script type="module">
+<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
   import {
     getFirestore, collection, addDoc, getDocs,
@@ -159,7 +159,7 @@
     onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
-  // ✅ Initialize Firebase first!
+  // ✅ Firebase Config
   const firebaseConfig = {
     apiKey: "AIzaSyCZRGN4o2pinPhOOJZVGigmZtqCmgex8Ns",
     authDomain: "daily-tasks-7b554.firebaseapp.com",
@@ -168,20 +168,30 @@
     messagingSenderId: "544699496670",
     appId: "1:544699496670:web:0ed0ed0a02ddd6dc41aa4f",
   };
+
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-  const auth = getAuth(app); // ✅ Auth uses the same initialized app
+  const auth = getAuth(app);
 
-  // ✅ Now sign in after app is initialized
+  let isUserLoggedIn = false;
+
+  // ✅ Confirm login
+  onAuthStateChanged(auth, (user) => {
+    if (user && user.email === "maniskk1414@gmail.com") {
+      console.log("✅ Logged in as:", user.email);
+      isUserLoggedIn = true;
+    } else {
+      console.warn("❌ Not logged in or wrong email");
+      isUserLoggedIn = false;
+    }
+  });
+
+  // ✅ Attempt login
   signInWithEmailAndPassword(auth, "maniskk1414@gmail.com", "mytaskpass2025")
-    .then((userCredential) => {
-      console.log("Logged in as:", userCredential.user.email);
-    })
-    .catch((error) => {
-      console.error("Login error:", error.message);
-    });
+    .then(() => console.log("Trying to log in..."))
+    .catch((error) => console.error("Login error:", error.message));
 
-  // --- Your remaining code follows ---
+  // App State
   let tasks = [], filter = "all";
   const datePicker = document.getElementById("datePicker");
   const dayLabel = document.getElementById("dayLabel");
@@ -190,106 +200,114 @@
   const tabs = document.querySelectorAll(".tab");
   const taskList = document.getElementById("taskList");
 
-
-    // Init: today, label, fetch
-    window.addEventListener("DOMContentLoaded", () => {
-      const today = new Date().toISOString().split("T")[0];
-      datePicker.value = today;
-      updateDayLabel();
-      fetchTasks();
-    });
-
-    function updateDayLabel(){
-      const d = new Date(datePicker.value);
-      const opts = { weekday:'long', month:'short', day:'numeric' };
-      dayLabel.textContent = `${d.toLocaleDateString('en-US',opts)} Tasks`;
-    }
-
-    async function fetchTasks(){
-      const snap = await getDocs(collection(db,"tasks"));
-      tasks = snap.docs.map(d=>({id:d.id,...d.data()}));
-      renderTasks();
-    }
-
-    function renderTasks(){
-      const sel = datePicker.value;
-      taskList.innerHTML = "";
-      tasks
-        .filter(t=>t.date===sel)
-        .filter(t=>{
-          if(filter==="active") return !t.done;
-          if(filter==="completed") return t.done;
-          return true;
-        })
-        .forEach(t=>{
-          const li = document.createElement("li");
-          li.className = "task-item"+(t.done?" completed":"");
-          const main = document.createElement("div");
-          main.className = "task-main";
-          const cb = document.createElement("input");
-          cb.type="checkbox"; cb.checked=t.done;
-          cb.onchange=()=>toggleDone(t.id,cb.checked);
-          const span = document.createElement("span");
-          span.textContent=t.text;
-          if(t.done) span.classList.add("completed");
-          main.append(cb,span); li.append(main);
-          const desc = document.createElement("textarea");
-          desc.className="task-desc";
-          desc.placeholder="Describe this task…";
-          desc.value=t.description||"";
-          desc.onchange=()=>updateDescription(t.id,desc.value);
-          li.append(desc);
-          taskList.append(li);
-        });
-    }
-
-   async function addTask() {
-  const text = input.value.trim();
-  const date = datePicker.value;
-  console.log("Trying to add task:", text, "for date:", date);
-
-  if (!text || !date) {
-    console.warn("Missing text or date");
-    return;
-  }
-
-  try {
-    await addDoc(collection(db, "tasks"), {
-      text,
-      description: "",
-      done: false,
-      date,
-      timestamp: new Date()
-    });
-    console.log("Task added successfully.");
-    input.value = "";
+  window.addEventListener("DOMContentLoaded", () => {
+    const today = new Date().toISOString().split("T")[0];
+    datePicker.value = today;
+    updateDayLabel();
     fetchTasks();
-  } catch (err) {
-    console.error("Error adding task:", err);
+  });
+
+  function updateDayLabel() {
+    const d = new Date(datePicker.value);
+    const opts = { weekday: 'long', month: 'short', day: 'numeric' };
+    dayLabel.textContent = `${d.toLocaleDateString('en-US', opts)} Tasks`;
   }
-}
 
-    async function toggleDone(id,done){
-      await updateDoc(doc(db,"tasks",id),{done}); fetchTasks();
-    }
-    async function updateDescription(id,description){
-      await updateDoc(doc(db,"tasks",id),{description});
+  async function fetchTasks() {
+    const snap = await getDocs(collection(db, "tasks"));
+    tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderTasks();
+  }
+
+  function renderTasks() {
+    const sel = datePicker.value;
+    taskList.innerHTML = "";
+    tasks
+      .filter(t => t.date === sel)
+      .filter(t => {
+        if (filter === "active") return !t.done;
+        if (filter === "completed") return t.done;
+        return true;
+      })
+      .forEach(t => {
+        const li = document.createElement("li");
+        li.className = "task-item" + (t.done ? " completed" : "");
+        const main = document.createElement("div");
+        main.className = "task-main";
+        const cb = document.createElement("input");
+        cb.type = "checkbox"; cb.checked = t.done;
+        cb.onchange = () => toggleDone(t.id, cb.checked);
+        const span = document.createElement("span");
+        span.textContent = t.text;
+        if (t.done) span.classList.add("completed");
+        main.append(cb, span); li.append(main);
+        const desc = document.createElement("textarea");
+        desc.className = "task-desc";
+        desc.placeholder = "Describe this task…";
+        desc.value = t.description || "";
+        desc.onchange = () => updateDescription(t.id, desc.value);
+        li.append(desc);
+        taskList.append(li);
+      });
+  }
+
+  async function addTask() {
+    const text = input.value.trim();
+    const date = datePicker.value;
+    console.log("Trying to add task:", text, "for date:", date);
+
+    if (!text || !date) {
+      console.warn("Missing text or date");
+      return;
     }
 
-    addBtn.addEventListener("click",addTask);
-    input.addEventListener("keydown",e=>{if(e.key==="Enter")addTask()});
-    datePicker.addEventListener("change",()=>{
-      updateDayLabel(); fetchTasks();
-    });
-    tabs.forEach(tab=>tab.addEventListener("click",()=>{
-      tabs.forEach(t=>t.classList.remove("active"));
-      tab.classList.add("active");
-      filter=tab.dataset.filter;
-      renderTasks();
-    }));
-  </script>
-</body>
-</html>
+    // ❗ Check login status
+    if (!isUserLoggedIn) {
+      alert("You must be logged in to add tasks.");
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "tasks"), {
+        text,
+        description: "",
+        done: false,
+        date,
+        timestamp: new Date()
+      });
+      console.log("✅ Task added successfully.");
+      input.value = "";
+      fetchTasks();
+    } catch (err) {
+      console.error("🔥 Error adding task:", err);
+    }
+  }
+
+  async function toggleDone(id, done) {
+    if (!isUserLoggedIn) return alert("You must be logged in to update tasks.");
+    await updateDoc(doc(db, "tasks", id), { done });
+    fetchTasks();
+  }
+
+  async function updateDescription(id, description) {
+    if (!isUserLoggedIn) return alert("You must be logged in to update description.");
+    await updateDoc(doc(db, "tasks", id), { description });
+  }
+
+  addBtn.addEventListener("click", addTask);
+  input.addEventListener("keydown", e => { if (e.key === "Enter") addTask() });
+  datePicker.addEventListener("change", () => {
+    updateDayLabel(); fetchTasks();
+  });
+  tabs.forEach(tab => tab.addEventListener("click", () => {
+    tabs.forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    filter = tab.dataset.filter;
+    renderTasks();
+  }));
+</script>
+
+
 
 
 
