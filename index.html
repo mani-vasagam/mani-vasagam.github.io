@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Daily Task Checklist</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <style>
     /* ─── Reset & Base ─── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
@@ -104,6 +103,33 @@
     }
     .task-desc:focus { outline: none; border-color: #4facfe; }
 
+    /* Login section styles */
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 20px;
+    }
+    .login-form input {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .login-form button {
+      padding: 8px;
+      background: #4facfe;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-size: 14px;
+    }
+    .login-form button:hover {
+      background: #3b92e0;
+    }
+
     /* ─── Mobile First: no change ─── */
 
     /* ─── Desktop ≥768px: Landscape split ─── */
@@ -132,6 +158,13 @@
         <input type="text" id="newTaskInput" placeholder="New task...">
         <button id="addBtn">ADD</button>
       </div>
+      <!-- 🔐 Login Form: inserted here -->
+      <div class="login-form">
+        <input type="email" id="loginEmail" placeholder="Enter email">
+        <input type="password" id="loginPassword" placeholder="Enter password">
+        <button id="loginBtn">Login</button>
+      </div>
+
       <div class="tabs">
         <div class="tab active" data-filter="all">All</div>
         <div class="tab" data-filter="active">Active</div>
@@ -144,7 +177,6 @@
       <ul id="taskList"></ul>
     </div>
   </div>
-
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
@@ -177,19 +209,15 @@
 
   // ✅ Confirm login
   onAuthStateChanged(auth, (user) => {
-    if (user && user.email === "maniskk1414@gmail.com") {
-      console.log("✅ Logged in as:", user.email);
+    if (user) {
+      // any signed-in user can read and update tasks, but only your account can write because of rules
+      console.log("✅ User logged in:", user.email);
       isUserLoggedIn = true;
     } else {
-      console.warn("❌ Not logged in or wrong email");
+      console.warn("❌ User not logged in");
       isUserLoggedIn = false;
     }
   });
-
-  // ✅ Attempt login
-  signInWithEmailAndPassword(auth, "maniskk1414@gmail.com", "mytaskpass2025")
-    .then(() => console.log("Trying to log in..."))
-    .catch((error) => console.error("Login error:", error.message));
 
   // App State
   let tasks = [], filter = "all";
@@ -294,6 +322,19 @@
     await updateDoc(doc(db, "tasks", id), { description });
   }
 
+  // login button handler
+  document.getElementById("loginBtn").addEventListener("click", async () => {
+    const email = document.getElementById("loginEmail").value;
+    const password = document.getElementById("loginPassword").value;
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      isUserLoggedIn = true;
+      alert("Logged in successfully");
+    } catch (err) {
+      alert("Login failed: " + err.message);
+    }
+  });
+
   addBtn.addEventListener("click", addTask);
   input.addEventListener("keydown", e => { if (e.key === "Enter") addTask() });
   datePicker.addEventListener("change", () => {
@@ -306,9 +347,5 @@
     renderTasks();
   }));
 </script>
-
-
-
-
-
-
+</body>
+</html>
