@@ -153,6 +153,23 @@
       updateDoc, doc
     } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
+const auth = getAuth();
+
+// Automatically log you in (no UI for now)
+signInWithEmailAndPassword(auth, "maniskk1414@gmail.com", "mytaskpass2025")
+  .then((userCredential) => {
+    console.log("Logged in as:", userCredential.user.email);
+  })
+  .catch((error) => {
+    console.error("Login error:", error.message);
+  });
+
     // ← Your Firebase config →
     const firebaseConfig = {
       apiKey: "AIzaSyCZRGN4o2pinPhOOJZVGigmZtqCmgex8Ns",
@@ -273,5 +290,6 @@
   </script>
 </body>
 </html>
+
 
 
