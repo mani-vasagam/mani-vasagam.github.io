@@ -226,12 +226,32 @@
         });
     }
 
-    async function addTask(){
-      const text=input.value.trim(), date=datePicker.value;
-      if(!text||!date) return;
-      await addDoc(collection(db,"tasks"),{text,description:"",done:false,date,timestamp:new Date()});
-      input.value=""; fetchTasks();
-    }
+   async function addTask() {
+  const text = input.value.trim();
+  const date = datePicker.value;
+  console.log("Trying to add task:", text, "for date:", date);
+
+  if (!text || !date) {
+    console.warn("Missing text or date");
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, "tasks"), {
+      text,
+      description: "",
+      done: false,
+      date,
+      timestamp: new Date()
+    });
+    console.log("Task added successfully.");
+    input.value = "";
+    fetchTasks();
+  } catch (err) {
+    console.error("Error adding task:", err);
+  }
+}
+
     async function toggleDone(id,done){
       await updateDoc(doc(db,"tasks",id),{done}); fetchTasks();
     }
@@ -253,3 +273,4 @@
   </script>
 </body>
 </html>
+
