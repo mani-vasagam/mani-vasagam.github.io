@@ -147,49 +147,49 @@
 
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-    import {
-      getFirestore, collection, addDoc, getDocs,
-      updateDoc, doc
-    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, getDocs,
+    updateDoc, doc
+  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+  import {
+    getAuth,
+    signInWithEmailAndPassword,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
-const auth = getAuth();
-
-// Automatically log you in (no UI for now)
-signInWithEmailAndPassword(auth, "maniskk1414@gmail.com", "mytaskpass2025")
-  .then((userCredential) => {
-    console.log("Logged in as:", userCredential.user.email);
-  })
-  .catch((error) => {
-    console.error("Login error:", error.message);
-  });
-
-    // ← Your Firebase config →
-    const firebaseConfig = {
-      apiKey: "AIzaSyCZRGN4o2pinPhOOJZVGigmZtqCmgex8Ns",
+  // ✅ Initialize Firebase first!
+  const firebaseConfig = {
+    apiKey: "AIzaSyCZRGN4o2pinPhOOJZVGigmZtqCmgex8Ns",
     authDomain: "daily-tasks-7b554.firebaseapp.com",
     projectId: "daily-tasks-7b554",
     storageBucket: "daily-tasks-7b554.firebasestorage.app",
     messagingSenderId: "544699496670",
     appId: "1:544699496670:web:0ed0ed0a02ddd6dc41aa4f",
-    };
-    const app = initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app); // ✅ Auth uses the same initialized app
 
-    // State & refs
-    let tasks = [], filter = "all";
-    const datePicker  = document.getElementById("datePicker");
-    const dayLabel    = document.getElementById("dayLabel");
-    const input       = document.getElementById("newTaskInput");
-    const addBtn      = document.getElementById("addBtn");
-    const tabs        = document.querySelectorAll(".tab");
-    const taskList    = document.getElementById("taskList");
+  // ✅ Now sign in after app is initialized
+  signInWithEmailAndPassword(auth, "maniskk1414@gmail.com", "mytaskpass2025")
+    .then((userCredential) => {
+      console.log("Logged in as:", userCredential.user.email);
+    })
+    .catch((error) => {
+      console.error("Login error:", error.message);
+    });
+
+  // --- Your remaining code follows ---
+  let tasks = [], filter = "all";
+  const datePicker = document.getElementById("datePicker");
+  const dayLabel = document.getElementById("dayLabel");
+  const input = document.getElementById("newTaskInput");
+  const addBtn = document.getElementById("addBtn");
+  const tabs = document.querySelectorAll(".tab");
+  const taskList = document.getElementById("taskList");
+
 
     // Init: today, label, fetch
     window.addEventListener("DOMContentLoaded", () => {
@@ -290,6 +290,7 @@ signInWithEmailAndPassword(auth, "maniskk1414@gmail.com", "mytaskpass2025")
   </script>
 </body>
 </html>
+
 
 
 
